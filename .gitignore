@@ -1,0 +1,9 @@
+# Dependencies & build outputs
+node_modules/
+dist/
+*.log
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+desktop.ini

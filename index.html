@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" />
+  <title>CIM Slicer 0.4.0 - Jihu Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Top Navigation & Workspace Bar (OrcaSlicer Style) -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">CIM</div>
+      <span class="brand-title">CIM Slicer</span>
+    </div>
+
+    <div class="workspace-tabs">
+      <button class="workspace-tab active" data-view="prepare" title="3D Layout & Model Preparation (Ctrl+1)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <span>Prepare</span>
+      </button>
+      <button class="workspace-tab" data-view="preview" title="G-Code Toolpath & Layer Simulation (Ctrl+2)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        <span>Preview</span>
+      </button>
+    </div>
+
+    <div class="topbar-actions">
+      <input type="file" id="file-input-stl" accept=".stl,.obj,.3mf" style="display: none;" />
+      <button class="btn btn-topbar" id="btn-import-stl" title="Load CAD mesh (.stl, .obj, .3mf)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <span>Load Model</span>
+      </button>
+      <select id="builtin-model-select" class="topbar-select" title="Load built-in test geometry">
+        <option value="" selected disabled>Load Sample Model...</option>
+        <option value="vase_twisted">Sample: Twisted Vase</option>
+        <option value="hollow_block">Sample: Hollow Block</option>
+        <option value="cylinder">Sample: Test Cylinder</option>
+        <option value="cube">Sample: 100mm Cube</option>
+      </select>
+      <button class="btn btn-topbar" id="btn-inspect-gcode" title="Inspect generated G-Code">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        <span>G-Code</span>
+      </button>
+      <button class="btn-icon btn-topbar" id="btn-about-app" title="About CIM Slicer 0.4.0 - Jihu Studio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="main-container">
+
+    <!-- Left Sidebar: Printer, Nozzle, Print Modes, Orca Parameters & Material Mix Manager -->
+    <aside class="sidebar">
+
+      <!-- 3 Printing Modes Selector -->
+      <div class="mode-selector">
+        <div class="section-caption">
+          <span>Printing Mode</span>
+          <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);">3 MODES</span>
+        </div>
+        <div class="mode-cards">
+          <div class="mode-card active" data-mode="standard">
+            <div class="mode-card-title">Standard</div>
+            <div class="mode-card-desc">Walls + Top/Bottom shells + Infill</div>
+          </div>
+          <div class="mode-card" data-mode="single_wall">
+            <div class="mode-card-title">Single Wall</div>
+            <div class="mode-card-desc">Outer surface only (1 perimeter/layer)</div>
+          </div>
+          <div class="mode-card" data-mode="spiral_vase">
+            <div class="mode-card-title">Spiralize Vase</div>
+            <div class="mode-card-desc">1 continuous helical outer line</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Process Preset Section (OrcaSlicer Style) -->
+      <div class="process-section">
+        <div class="process-title-row">
+          <div class="process-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>Process</span>
+          </div>
+          <div class="process-actions">
+            <button class="btn-process-action" id="btn-save-preset" title="Save current settings to active preset">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            </button>
+            <button class="btn-process-action" id="btn-save-as-preset" title="Save as new user preset (copy)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <button class="btn-process-action" id="btn-delete-preset" title="Delete active user preset">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+            <button class="btn-process-action" id="btn-export-preset" title="Export preset as JSON file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </button>
+            <button class="btn-process-action" id="btn-import-preset" title="Import preset from JSON file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </button>
+            <input type="file" id="file-import-preset" accept=".json" style="display: none;" />
+          </div>
+        </div>
+        <div class="process-select-bar">
+          <select id="setting-preset-select" class="process-dropdown" title="Select Process Preset (User / System)">
+            <optgroup label="User presets" id="optgroup-user-presets"></optgroup>
+            <optgroup label="System presets" id="optgroup-system-presets"></optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- Parameter Category Tabs (OrcaSlicer Layout) -->
+      <div class="param-tabs">
+        <button class="param-tab active" data-tab="tab-quality">Quality</button>
+        <button class="param-tab" data-tab="tab-strength">Strength</button>
+        <button class="param-tab" data-tab="tab-speed">Speed</button>
+        <button class="param-tab" data-tab="tab-support">Support</button>
+        <button class="param-tab" data-tab="tab-material">Mix Recipe</button>
+        <button class="param-tab" data-tab="tab-machine">Machine</button>
+      </div>
+
+      <!-- Tab Panes -->
+      <div class="sidebar-body">
+
+        <!-- TAB 1: QUALITY -->
+        <div class="tab-pane active" id="tab-quality">
+          <div class="param-group">
+            <div class="param-group-title">Layer Height</div>
+            <div class="field-row">
+              <label class="field-label">Layer height<span class="field-sub">Recommended: 40–60% of line width</span></label>
+              <div class="field-control">
+                <input type="number" step="0.1" min="0.5" max="15" data-setting="layerHeight" value="2.5" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">First layer height</label>
+              <div class="field-control">
+                <input type="number" step="0.1" min="0.5" max="15" data-setting="firstLayerHeight" value="2.5" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="param-group">
+            <div class="param-group-title">Line Width (Bead Geometry)</div>
+            <div class="field-row">
+              <label class="field-label">Default line width</label>
+              <div class="field-control">
+                <input type="number" step="0.2" min="1" max="25" data-setting="lineWidth" value="5.0" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Outer wall width</label>
+              <div class="field-control">
+                <input type="number" step="0.2" min="1" max="25" data-setting="outerWallWidth" value="5.0" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Inner wall width</label>
+              <div class="field-control">
+                <input type="number" step="0.2" min="1" max="25" data-setting="innerWallWidth" value="5.0" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Infill line width</label>
+              <div class="field-control">
+                <input type="number" step="0.2" min="1" max="25" data-setting="infillLineWidth" value="5.0" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Bead cross-section model</label>
+              <div class="field-control">
+                <select data-setting="crossSectionModel">
+                  <option value="capsule">Orca Stadium / Capsule</option>
+                  <option value="rectangular">Full Rectangular (W × H)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="param-group">
+            <div class="param-group-title">Seam</div>
+            <div class="field-row">
+              <label class="field-label">Seam position</label>
+              <div class="field-control">
+                <select data-setting="seamPosition">
+                  <option value="aligned">Aligned (Front-Left)</option>
+                  <option value="aligned_back">Aligned (Back)</option>
+                  <option value="sharpest">Sharpest Corner</option>
+                  <option value="random">Random</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: STRENGTH / WALLS / INFILL -->
+        <div class="tab-pane" id="tab-strength">
+          <!-- Top/Bottom Shells (Available in ALL modes: Standard, Single Wall, Spiralize Vase) -->
+          <div class="param-group" id="group-shells-strength">
+            <div class="param-group-title">Top/Bottom shells</div>
+            <div class="field-row">
+              <label class="field-label">Top surface pattern</label>
+              <div class="field-control">
+                <select data-setting="topSurfacePattern">
+                  <option value="monotonic">Monotonic</option>
+                  <option value="monotonic_lines">Monotonic line</option>
+                  <option value="rectilinear">Rectilinear</option>
+                  <option value="aligned_rectilinear">Aligned Rectilinear</option>
+                  <option value="concentric">Concentric</option>
+                  <option value="concentric_spiral">Concentric Spiral (1-Line)</option>
+                  <option value="archimedean">Archimedean Chords</option>
+                  <option value="octagram">Octagram Spiral</option>
+                  <option value="hilbert">Hilbert Curve</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Top shell layers</label>
+              <div class="field-control">
+                <input type="number" step="1" min="0" max="50" data-setting="topLayers" value="2" />
+                <span class="unit">layers</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Top shell thickness</label>
+              <div class="field-control">
+                <span id="readout-top-thickness" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">5.0 mm</span>
+              </div>
+            </div>
+
+            <div class="field-row" style="margin-top: 4px;">
+              <label class="field-label">Bottom surface pattern</label>
+              <div class="field-control">
+                <select data-setting="bottomSurfacePattern">
+                  <option value="monotonic">Monotonic</option>
+                  <option value="monotonic_lines">Monotonic line</option>
+                  <option value="rectilinear">Rectilinear</option>
+                  <option value="aligned_rectilinear">Aligned Rectilinear</option>
+                  <option value="concentric">Concentric</option>
+                  <option value="concentric_spiral">Concentric Spiral (1-Line)</option>
+                  <option value="archimedean">Archimedean Chords</option>
+                  <option value="octagram">Octagram Spiral</option>
+                  <option value="hilbert">Hilbert Curve</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Bottom shell layers</label>
+              <div class="field-control">
+                <input type="number" step="1" min="0" max="50" data-setting="bottomLayers" value="2" />
+                <span class="unit">layers</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Bottom shell thickness</label>
+              <div class="field-control">
+                <span id="readout-bottom-thickness" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">5.0 mm</span>
+              </div>
+            </div>
+
+            <div class="field-row" style="margin-top: 4px;">
+              <label class="field-label">Internal solid infill pattern</label>
+              <div class="field-control">
+                <select data-setting="internalSolidInfillPattern">
+                  <option value="match_surface">Match Surface Pattern</option>
+                  <option value="monotonic">Monotonic</option>
+                  <option value="monotonic_lines">Monotonic line</option>
+                  <option value="rectilinear">Rectilinear</option>
+                  <option value="aligned_rectilinear">Aligned Rectilinear</option>
+                  <option value="concentric">Concentric</option>
+                  <option value="concentric_spiral">Concentric Spiral (1-Line)</option>
+                  <option value="grid">Grid</option>
+                  <option value="archimedean">Archimedean Chords</option>
+                  <option value="octagram">Octagram Spiral</option>
+                  <option value="hilbert">Hilbert Curve</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Standard Mode Settings -->
+          <div class="param-group" id="group-standard-strength">
+            <div class="param-group-title">Walls</div>
+            <div class="field-row">
+              <label class="field-label">Wall loops</label>
+              <div class="field-control">
+                <input type="number" step="1" min="1" max="15" data-setting="wallCount" value="2" />
+                <span class="unit">loops</span>
+              </div>
+            </div>
+
+            <div class="param-group-title" style="margin-top: 6px;">Sparse infill</div>
+            <div class="field-row">
+              <label class="field-label">Sparse infill density</label>
+              <div class="field-control">
+                <input type="number" step="5" min="0" max="100" data-setting="infillDensity" value="15" />
+                <span class="unit">%</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Sparse infill pattern</label>
+              <div class="field-control">
+                <select data-setting="infillPattern">
+                  <option value="grid">Grid</option>
+                  <option value="zigzag">Rectilinear (Zig-Zag)</option>
+                  <option value="aligned_rectilinear">Aligned Rectilinear</option>
+                  <option value="lines">Rectilinear Lines</option>
+                  <option value="concentric">Concentric</option>
+                  <option value="concentric_spiral">Concentric Spiral (1-Line)</option>
+                  <option value="triangles">Triangles</option>
+                  <option value="tri_hexagon">Tri-Hexagon</option>
+                  <option value="honeycomb">Honeycomb</option>
+                  <option value="archimedean">Archimedean Chords</option>
+                  <option value="octagram">Octagram Spiral</option>
+                  <option value="hilbert">Hilbert Curve</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Single Outer Wall Mode Options -->
+          <div class="param-group" id="group-single-wall-opts" style="display: none;">
+            <div class="param-group-title">Single Surface Shell Options</div>
+            <p style="font-size: 11px; color: var(--text-secondary);">
+              Prints a single 1-perimeter wall along the model's surface with 0% internal sparse infill and configurable Top/Bottom solid shells.
+            </p>
+            <div class="field-row">
+              <label class="field-label">Include inner cavity contours</label>
+              <div class="field-control">
+                <label class="checkbox-wrap">
+                  <input type="checkbox" data-setting="singleWallIncludeInnerHoles" checked />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spiralize Outer Contour (Vase Mode) Options -->
+          <div class="param-group" id="group-vase-opts" style="display: none;">
+            <div class="param-group-title">Spiralize Outer Contour (Vase Mode)</div>
+            <p style="font-size: 11px; color: var(--text-secondary);">
+              Continuously interpolates Z height along a single unbroken outer contour line, with configurable planar Top/Bottom solid shells.
+            </p>
+            <div class="field-row">
+              <label class="field-label">Smooth initial base ring</label>
+              <div class="field-control">
+                <label class="checkbox-wrap">
+                  <input type="checkbox" data-setting="vaseBottomLayer" checked />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: SPEED & AUGER FLOW -->
+        <div class="tab-pane" id="tab-speed">
+          <div class="param-group">
+            <div class="param-group-title">Uniform Paste Extrusion Speeds</div>
+            <div class="field-row">
+              <label class="field-label">
+                Printing speed
+                <span class="field-sub">All extrusion moves (walls, infill, first layer)</span>
+              </label>
+              <div class="field-control">
+                <input type="number" step="1" min="2" max="150" data-setting="printSpeed" value="25" />
+                <span class="unit">mm/s</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">
+                Travel speed
+                <span class="field-sub">G0 non-extrusion repositioning</span>
+              </label>
+              <div class="field-control">
+                <input type="number" step="5" min="10" max="250" data-setting="travelSpeed" value="80" />
+                <span class="unit">mm/s</span>
+              </div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 5px; padding: 7px 9px; margin-top: 6px; font-size: 10.5px; line-height: 1.4; color: var(--text-secondary);">
+              <strong>Constant Extrusion Velocity:</strong> Paste and mortar 3DCP requires an identical linear speed across all printed features to prevent auger pressure surging, flow tearing, and inconsistent bead geometry.
+            </div>
+          </div>
+
+          <div class="param-group">
+            <div class="param-group-title">Auger Screw Extrusion &amp; Retraction</div>
+            <div class="field-row">
+              <label class="field-label">Flow ratio (Multiplier)</label>
+              <div class="field-control">
+                <input type="number" step="0.02" min="0.1" max="5.0" data-setting="flowRatio" value="1.00" />
+                <span class="unit">×</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Auger E-axis scaling mode</label>
+              <div class="field-control">
+                <select data-setting="eAxisMode">
+                  <option value="filament">Equiv. Filament Ø</option>
+                  <option value="mm_per_ml">Direct Auger (mm/ml)</option>
+                  <option value="volumetric">Volumetric (mm³)</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row" id="row-equiv-filament">
+              <label class="field-label">Equivalent filament diameter</label>
+              <div class="field-control">
+                <input type="number" step="0.05" min="0.5" max="20" data-setting="equivFilamentDia" value="1.75" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row" id="row-auger-mm-ml" style="display: none;">
+              <label class="field-label">Auger E distance per 1 ml</label>
+              <div class="field-control">
+                <input type="number" step="0.5" min="0.1" max="500" data-setting="augerMmPerMl" value="10.0" />
+                <span class="unit">mm/ml</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Enable auger retraction</label>
+              <div class="field-control">
+                <label class="checkbox-wrap">
+                  <input type="checkbox" data-setting="retractEnabled" checked />
+                </label>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Retraction distance</label>
+              <div class="field-control">
+                <input type="number" step="0.2" min="0" max="20" data-setting="retractDistance" value="1.5" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Retraction speed</label>
+              <div class="field-control">
+                <input type="number" step="1" min="1" max="80" data-setting="retractSpeed" value="15" />
+                <span class="unit">mm/s</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Z-hop when retracting</label>
+              <div class="field-control">
+                <input type="number" step="0.5" min="0" max="20" data-setting="zHop" value="1.5" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: SUPPORT & MANUAL LAYER PAUSE -->
+        <div class="tab-pane" id="tab-support">
+          <!-- Main Enable Support Switch -->
+          <div class="param-group">
+            <div class="param-group-title">Support Strategy</div>
+            <div class="field-row">
+              <label class="field-label">
+                Enable Support / Pause
+                <span class="field-sub">Overhang support &amp; manual insert pauses</span>
+              </label>
+              <div class="field-control">
+                <label class="checkbox-wrap">
+                  <input type="checkbox" data-setting="enableSupport" id="chk-enable-support" />
+                </label>
+              </div>
+            </div>
+            <div style="font-size: 11px; line-height: 1.45; color: var(--text-secondary); padding: 4px 0 2px;">
+              Check <strong>Enable Support</strong> and click <strong>Slice Plate</strong> to detect overhangs and generate an adaptive hollow 3D support insert (exportable as STL for rapid plastic 3D printing) with automatic print pauses.
+            </div>
+          </div>
+
+          <!-- Adaptive 3D Overhang Support & STL Export -->
+          <div class="param-group" id="group-support-adaptive-settings">
+            <div class="param-group-title">
+              <span>Adaptive Overhang Support (3D STL)</span>
+              <label class="checkbox-wrap" style="font-size: 10px; font-weight: 500; text-transform: none; color: var(--text-secondary);" title="Show or hide generated 3D support geometry in viewport">
+                <input type="checkbox" id="chk-show-support-mesh" checked /> Show in 3D
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">
+                Overhang threshold angle
+                <span class="field-sub">Detect slopes steeper than angle</span>
+              </label>
+              <div class="field-control">
+                <input type="number" step="5" min="10" max="75" data-setting="supportOverhangAngle" value="30" />
+                <span class="unit">°</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">
+                Support shell thickness
+                <span class="field-sub">Hollow frame wall for fast FDM print</span>
+              </label>
+              <div class="field-control">
+                <input type="number" step="0.5" min="1.6" max="12.0" data-setting="supportWallThickness" value="3.5" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">
+                Horizontal XY clearance
+                <span class="field-sub">Gap from concrete walls for easy fit</span>
+              </label>
+              <div class="field-control">
+                <input type="number" step="0.1" min="0.2" max="5.0" data-setting="supportClearanceXY" value="0.8" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">
+                Vertical Z interface gap
+                <span class="field-sub">Top/bottom seating tolerance</span>
+              </label>
+              <div class="field-control">
+                <input type="number" step="0.1" min="0.0" max="3.0" data-setting="supportClearanceZ" value="0.4" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">
+                Auto-schedule pause layers
+                <span class="field-sub">Insert pause at overhang bridge start</span>
+              </label>
+              <div class="field-control">
+                <label class="checkbox-wrap">
+                  <input type="checkbox" data-setting="supportAutoPause" id="chk-support-auto-pause" checked />
+                </label>
+              </div>
+            </div>
+
+            <!-- Adaptive Support Status & Metrics Readout -->
+            <div id="support-detection-summary" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 5px; padding: 8px 10px; margin-top: 6px; font-size: 11px; line-height: 1.45; color: var(--text-secondary);">
+              Support is disabled by default. Enable Support above and click <strong>Slice Plate</strong> to analyze overhangs and build adaptive 3D support.
+            </div>
+
+            <button class="btn btn-primary btn-sm" id="btn-export-support-stl" disabled style="width: 100%; justify-content: center; margin-top: 8px; padding: 7px 10px; font-weight: 600;">
+              Export Support STL (.stl)
+            </button>
+          </div>
+
+          <!-- Pause Layer Selection -->
+          <div class="param-group" id="group-support-pause-settings">
+            <div class="param-group-title">
+              <span>Pause Layer Schedule</span>
+              <button class="btn btn-sm" id="btn-add-current-layer-pause" title="Add currently active layer from preview/slider to pause list">+ Add Current Layer</button>
+            </div>
+            <div class="field-row">
+              <label class="field-label">
+                Pause before layers
+                <span class="field-sub">e.g. 15, 30, 45 (1-based)</span>
+              </label>
+              <div class="field-control" style="flex: 1; max-width: 170px;">
+                <input type="text" data-setting="supportPauseLayers" id="input-support-pause-layers" placeholder="e.g. 12, 28, 45" style="width: 100%; font-family: var(--font-mono); font-size: 11px;" />
+              </div>
+            </div>
+
+            <!-- Visual Pause Layer Tag Pills -->
+            <div id="support-pause-tags-container" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; min-height: 24px;"></div>
+
+            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; line-height: 1.35;">
+              The slicer will pause printing immediately <em>before</em> starting the specified layers. Scrub layers in Preview to inspect overhangs and click <strong>+ Add Current Layer</strong>.
+            </div>
+          </div>
+
+          <!-- Piston Refill Auto-Pause (500ml Cylinder) -->
+          <div class="param-group" id="group-piston-pause-settings">
+            <div class="param-group-title">Piston Refill Pause (500ml Cylinder)</div>
+            <div class="field-row">
+              <label class="field-label">
+                Auto-pause at 90% piston
+                <span class="field-sub">Pauses before 450ml, 900ml... to reload cylinder</span>
+              </label>
+              <div class="field-control">
+                <label class="checkbox-wrap">
+                  <input type="checkbox" data-setting="pistonAutoPause" id="chk-piston-auto-pause" checked />
+                </label>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Cylinder capacity</label>
+              <div class="field-control">
+                <input type="number" step="10" min="50" max="5000" data-setting="pistonCapacityMl" value="500" />
+                <span class="unit">ml</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Pause threshold</label>
+              <div class="field-control">
+                <input type="number" step="1" min="50" max="99" data-setting="pistonPauseThreshold" value="90" />
+                <span class="unit">%</span>
+              </div>
+            </div>
+            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; line-height: 1.35;">
+              When total print volume exceeds 500 ml, CIM Slicer automatically injects safe M0/M25 pauses at 90% capacity (450 ml per cycle) so you can reload the piston without running dry.
+            </div>
+          </div>
+
+          <!-- Safe Park & Resume Parameters for Concrete Auger Extruder -->
+          <div class="param-group" id="group-support-park-settings">
+            <div class="param-group-title">Safe Park &amp; Resume Routine</div>
+            
+            <div class="field-row">
+              <label class="field-label">Auger decompression</label>
+              <div class="field-control">
+                <input type="number" step="0.5" min="0" max="25" data-setting="supportRetractDist" value="2.5" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">Z-Hop clearance lift</label>
+              <div class="field-control">
+                <input type="number" step="1" min="0" max="100" data-setting="supportParkLiftZ" value="10.0" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">Park position X</label>
+              <div class="field-control">
+                <input type="number" step="5" min="0" max="500" data-setting="supportParkX" value="10" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">Park position Y</label>
+              <div class="field-control">
+                <input type="number" step="5" min="0" max="500" data-setting="supportParkY" value="10" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">Pause command</label>
+              <div class="field-control">
+                <select data-setting="supportPauseCommand">
+                  <option value="M0">M0 (Marlin Stop &amp; Wait)</option>
+                  <option value="M25">M25 (SD Card Pause)</option>
+                  <option value="M600">M600 (Filament/Tool Change)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: MATERIAL / MIX RECIPE MANAGER -->
+        <div class="tab-pane" id="tab-material">
+          <div class="param-group">
+            <div class="param-group-title">
+              <span>Material Type</span>
+              <span class="unit">2 MODES</span>
+            </div>
+            <div class="mode-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <div class="mode-card material-type-card active" data-material-type="concrete">
+                <div class="mode-card-title">Concrete</div>
+                <div class="mode-card-desc">Cement paste mix recipe &amp; batch weights</div>
+              </div>
+              <div class="mode-card material-type-card" data-material-type="ceramic">
+                <div class="mode-card-title">Ceramic</div>
+                <div class="mode-card-desc">Clay / ceramic extrusion (volume &amp; time only)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="param-group">
+            <div id="concrete-recipe-header-group" style="display: flex; flex-direction: column; gap: 7px;">
+              <div class="param-group-title">
+                <span>Saved Mix Recipes</span>
+                <button class="btn btn-sm" id="btn-reset-default-recipe" title="Restore Baseline Recipe">Reset Default</button>
+              </div>
+
+              <div class="mix-recipe-bar">
+                <select id="recipe-select"></select>
+                <button class="btn btn-sm" id="btn-delete-recipe" title="Delete selected recipe">Del</button>
+              </div>
+
+              <div class="field-row">
+                <label class="field-label">Recipe name</label>
+                <div class="field-control" style="flex: 1;">
+                  <input type="text" id="recipe-name-input" style="width: 100%; font-family: var(--font-sans);" />
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label class="field-label">Piston cylinder capacity<span class="field-sub">Reference volume for batch weights</span></label>
+              <div class="field-control">
+                <input type="number" id="recipe-cylinder-vol" step="10" min="50" max="5000" value="500" />
+                <span class="unit">ml</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="param-group" id="group-mix-batch-composition">
+            <div class="param-group-title">
+              <span>Batch Composition (Per 500ml)</span>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn btn-sm" id="btn-fit-cylinder-vol" title="Scale ingredient weights proportionally so total physical volume equals exact cylinder capacity (500ml)">Fit 500ml</button>
+                <button class="btn btn-sm" id="btn-add-ingredient">+ Add</button>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 72px 56px 22px; gap: 6px; font-size: 10px; color: var(--text-muted); text-transform: uppercase; padding: 0 2px;">
+              <span>Component</span>
+              <span style="text-align: right;">Weight (g)</span>
+              <span style="text-align: right;">Vol (ml)</span>
+              <span></span>
+            </div>
+
+            <div class="ingredient-list" id="ingredient-list"></div>
+
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="btn btn-primary btn-sm" id="btn-save-recipe" style="flex: 1; justify-content: center;">Save Recipe</button>
+              <button class="btn btn-sm" id="btn-save-new-recipe" style="flex: 1; justify-content: center;">Save as New</button>
+            </div>
+          </div>
+
+          <div class="param-group" id="group-mix-computed-properties">
+            <div class="param-group-title">Computed Paste Properties (Absolute Volume)</div>
+            <div class="mix-summary-grid">
+              <div class="metric-box">
+                <div class="metric-box-label">Batch Weight &amp; Vol</div>
+                <div class="metric-box-value" id="mix-batch-weight">1047.58 g / 500.0 ml</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-box-label">Wet Paste Density</div>
+                <div class="metric-box-value" id="mix-wet-density">2.095 g/ml</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-box-label">W/C &amp; Open Time</div>
+                <div class="metric-box-value" id="mix-wc-ratio">0.297 · 90–120m</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-box-label">Feed Tube Hold-Up</div>
+                <div class="metric-box-value" id="mix-tube-holdup">22.6 ml (47.4 g)</div>
+              </div>
+            </div>
+            <div class="field-row" style="margin-top: 4px;">
+              <label class="field-label">Include tube dead-volume in print total</label>
+              <div class="field-control">
+                <label class="checkbox-wrap">
+                  <input type="checkbox" data-setting="includeTubeInMixCalc" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 6: MACHINE & FEED TUBE SPECS -->
+        <div class="tab-pane" id="tab-machine">
+          <div class="param-group">
+            <div class="param-group-title">Printer Volume</div>
+            <div class="field-row">
+              <label class="field-label">Printable X width</label>
+              <div class="field-control">
+                <input type="number" step="5" min="50" max="1000" data-setting="bedX" value="300" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Printable Y depth</label>
+              <div class="field-control">
+                <input type="number" step="5" min="50" max="1000" data-setting="bedY" value="300" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Printable Z height</label>
+              <div class="field-control">
+                <input type="number" step="5" min="50" max="1000" data-setting="bedZ" value="380" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="param-group">
+            <div class="param-group-title">Feed Tube (Piston → Auger)</div>
+            <div class="field-row">
+              <label class="field-label">Tube inner diameter</label>
+              <div class="field-control">
+                <input type="number" step="0.5" min="2" max="25" data-setting="ptfeInnerDia" value="6.0" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field-label">Tube length</label>
+              <div class="field-control">
+                <input type="number" step="50" min="100" max="5000" data-setting="ptfeLengthMm" value="800" />
+                <span class="unit">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="param-group">
+            <div class="param-group-title">Machine G-Code</div>
+            <label class="field-label">Start G-code</label>
+            <textarea data-setting="startGcode"></textarea>
+            <label class="field-label" style="margin-top: 4px;">End G-code</label>
+            <textarea data-setting="endGcode"></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Action Buttons -->
+      <div class="sidebar-footer">
+        <button class="btn btn-primary btn-slice-cta" id="btn-slice" title="Generate concrete extrusion toolpaths">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"></path><path d="M20 12l-4-4"></path><path d="M20 12l-4 4"></path><line x1="4" y1="6" x2="16" y2="6"></line><line x1="4" y1="18" x2="16" y2="18"></line></svg>
+          <span>Slice Plate</span>
+        </button>
+        <button class="btn btn-export-cta" id="btn-export-gcode" title="Export G-Code file">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Export G-Code</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Center/Right 3D Viewport Area -->
+    <main class="viewport-area">
+      <canvas id="viewport-canvas"></canvas>
+
+      <!-- Drag & Drop Overlay -->
+      <div class="dropzone-overlay" id="dropzone-overlay">
+        <div class="dropzone-text">Drop STL or OBJ Model Here to Load onto Build Plate</div>
+      </div>
+
+      <!-- Top-Left Floating Viewport Controls & Model Transform -->
+      <div class="viewport-toolbar">
+        <div class="toolbar-group">
+          <button class="btn btn-sm" id="btn-cam-iso">3D Iso</button>
+          <button class="btn btn-sm" id="btn-cam-top">Top</button>
+          <button class="btn btn-sm" id="btn-cam-front">Front</button>
+          <button class="btn btn-sm" id="btn-center-model">Center</button>
+          <button class="btn btn-sm" id="btn-reset-transform">Reset</button>
+        </div>
+
+        <!-- Preview Display Mode Switcher (Visible in Preview Tab) -->
+        <div class="toolbar-group" id="preview-display-menu" style="flex-direction: column; align-items: stretch; gap: 6px; width: 265px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.4px;">Preview Display Mode</span>
+            <span style="font-size: 10px; font-family: var(--font-mono); color: var(--text-muted);" id="preview-width-indicator">Line Width: 5.0mm</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
+            <button class="btn btn-sm preview-style-btn active" data-pstyle="extruded_form" style="justify-content: center; padding: 5px 4px;">3D Bead Form</button>
+            <button class="btn btn-sm preview-style-btn" data-pstyle="toolpath_lines" style="justify-content: center; padding: 5px 4px;">Motion Path</button>
+            <button class="btn btn-sm preview-style-btn" data-pstyle="hybrid_xray" style="justify-content: center; padding: 5px 4px;">Hybrid X-Ray</button>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+            <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Shading</span>
+            <select id="preview-color-scheme" style="font-size: 11px; padding: 3px 6px; min-width: 165px;">
+              <option value="feature">Feature Type (Walls / Infill)</option>
+              <option value="concrete_realistic">Realistic Printed Concrete</option>
+              <option value="speed">Print Speed (mm/s)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="transform-panel" id="prepare-transform-panel" style="width: 265px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="active-model-label" style="font-weight: 700; font-size: 11.5px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No 3D Model Loaded</span>
+          </div>
+          <div id="model-dimensions-label" style="font-size: 10.5px; font-family: var(--font-mono); color: var(--text-muted);">
+            Load STL / OBJ or select sample
+          </div>
+
+          <!-- Place on Face (Lay Flat on Bed) Section -->
+          <div style="border-top: 1px solid var(--border-subtle); padding-top: 6px; margin-top: 2px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <span style="font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">Lay on Bed (Place on Face)</span>
+            </div>
+            <button class="btn btn-sm" id="btn-place-on-face" style="width: 100%; justify-content: center; margin-bottom: 5px; font-weight: 600;">
+              Select Face on 3D Model
+            </button>
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px;">
+              <button class="btn btn-sm face-preset-btn" data-face="bottom" title="Lay Bottom Face on Bed" style="padding: 3px 0; justify-content: center; font-size: 10px;">Bot</button>
+              <button class="btn btn-sm face-preset-btn" data-face="top" title="Lay Top Face on Bed" style="padding: 3px 0; justify-content: center; font-size: 10px;">Top</button>
+              <button class="btn btn-sm face-preset-btn" data-face="front" title="Lay Front Face on Bed" style="padding: 3px 0; justify-content: center; font-size: 10px;">Frt</button>
+              <button class="btn btn-sm face-preset-btn" data-face="back" title="Lay Back Face on Bed" style="padding: 3px 0; justify-content: center; font-size: 10px;">Bck</button>
+              <button class="btn btn-sm face-preset-btn" data-face="left" title="Lay Left Face on Bed" style="padding: 3px 0; justify-content: center; font-size: 10px;">Lft</button>
+              <button class="btn btn-sm face-preset-btn" data-face="right" title="Lay Right Face on Bed" style="padding: 3px 0; justify-content: center; font-size: 10px;">Rgt</button>
+            </div>
+          </div>
+
+          <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-top: 2px;">Position Offset (mm)</div>
+          <div class="axis-inputs">
+            <div class="axis-field"><span>X</span><input type="number" id="tf-pos-x" step="5" value="0" /></div>
+            <div class="axis-field"><span>Y</span><input type="number" id="tf-pos-y" step="5" value="0" /></div>
+            <div class="axis-field"><span>Z (Bed)</span><input type="number" value="0" disabled /></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+            <span style="font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Scale (%)</span>
+            <label class="checkbox-wrap" style="font-size: 10px; color: var(--text-muted);">
+              <input type="checkbox" id="tf-uniform-scale" checked /> Uniform
+            </label>
+          </div>
+          <div class="axis-inputs">
+            <div class="axis-field"><span>X %</span><input type="number" id="tf-scale-x" step="5" min="5" max="1000" value="100" /></div>
+            <div class="axis-field"><span>Y %</span><input type="number" id="tf-scale-y" step="5" min="5" max="1000" value="100" /></div>
+            <div class="axis-field"><span>Z %</span><input type="number" id="tf-scale-z" step="5" min="5" max="1000" value="100" /></div>
+          </div>
+
+          <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-top: 2px;">Rotation (°)</div>
+          <div class="axis-inputs">
+            <div class="axis-field"><span>RX</span><input type="number" id="tf-rot-x" step="15" value="0" /></div>
+            <div class="axis-field"><span>RY</span><input type="number" id="tf-rot-y" step="15" value="0" /></div>
+            <div class="axis-field"><span>RZ</span><input type="number" id="tf-rot-z" step="15" value="0" /></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top-Right Post-Slice Estimation & Concrete Mix Breakdown Panel -->
+      <aside class="stats-overlay" id="stats-overlay" style="display: none;">
+        <div class="stats-header">
+          <span class="stats-title">Slice &amp; Material Estimate</span>
+          <span class="stats-badge" id="stat-badge-mode">STANDARD · 5.0mm</span>
+        </div>
+
+        <div class="stats-body">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-label">Est. Print Time</div>
+              <div class="stat-card-val" id="stat-print-time">--</div>
+              <div class="stat-card-sub" id="stat-layer-count">0 layers</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Material Volume</div>
+              <div class="stat-card-val" id="stat-volume-ml">0.0 ml</div>
+              <div class="stat-card-sub" id="stat-volume-sub">0.00 m bead</div>
+            </div>
+            <div class="stat-card" id="stat-card-weight">
+              <div class="stat-card-label">Material Weight</div>
+              <div class="stat-card-val" id="stat-weight-g">0.0 g</div>
+              <div class="stat-card-sub" id="stat-weight-sub">@ 2.095 g/ml</div>
+            </div>
+            <div class="stat-card" id="stat-card-piston">
+              <div class="stat-card-label">Piston Charges</div>
+              <div class="stat-card-val" id="stat-piston-fills">0.00 × 500ml</div>
+              <div class="stat-card-sub" id="stat-piston-sub">0% of 500ml cylinder</div>
+            </div>
+          </div>
+
+          <div class="piston-gauge-box">
+            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary);">
+              <span id="piston-gauge-label">500 ml Piston Cylinder Utilization</span>
+              <span style="font-family: var(--font-mono); color: var(--text-muted);">Manual Dial Feed</span>
+            </div>
+            <div class="piston-bar-outer">
+              <div class="piston-bar-inner" id="piston-bar-fill"></div>
+            </div>
+          </div>
+
+          <div id="stats-mix-breakdown-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <span style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-primary); letter-spacing: 0.4px;">
+                Required Mix Breakdown
+              </span>
+              <span style="font-size: 10px; color: var(--text-muted);">Live Sync</span>
+            </div>
+            <table class="recipe-breakdown-table">
+              <thead>
+                <tr>
+                  <th>Component</th>
+                  <th class="num">Per 500ml</th>
+                  <th class="num">This Print</th>
+                </tr>
+              </thead>
+              <tbody id="breakdown-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Bottom Layer Scrubber & Toolpath Legend -->
+      <div class="layer-scrubber" id="layer-scrubber-bar">
+        <!-- Row 1: Layer Selection & Toolpath Feature Legend -->
+        <div class="scrubber-row layer-row">
+          <div class="legend-bar">
+            <span><i class="legend-dot" style="background: #b85218;"></i>Outer Wall</span>
+            <span><i class="legend-dot" style="background: #9e7c16;"></i>Inner Wall</span>
+            <span><i class="legend-dot" style="background: #801e32;"></i>Solid Shell</span>
+            <span><i class="legend-dot" style="background: #1d6840;"></i>Sparse Infill</span>
+            <label class="checkbox-wrap" style="margin-left: 6px;">
+              <input type="checkbox" id="chk-show-seams" checked /> <i class="legend-dot" style="background: #d8d8e2; width: 8px; height: 8px; border-radius: 50%;"></i>Z-Seam
+            </label>
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="chk-show-travel" /> <i class="legend-dot" style="background: #266085; width: 8px; height: 8px;"></i>Travel
+            </label>
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="chk-show-ghost" /> Ghost Mesh
+            </label>
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="chk-preview-show-support" checked /> <i class="legend-dot" style="background: #2ab69b; width: 8px; height: 8px;"></i>Support
+            </label>
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="chk-single-layer" /> Single Layer
+            </label>
+          </div>
+
+          <div class="slider-control-group">
+            <span class="scrubber-label">LAYER</span>
+            <input type="range" id="layer-slider" min="0" max="50" value="50" />
+            <div class="layer-readout" id="layer-readout">Layer 1 / 1 (2.50 mm)</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Nozzle Movement & Toolpath Playback Simulation -->
+        <div class="scrubber-row playback-row" id="nozzle-playback-row">
+          <div class="playback-controls">
+            <button class="btn btn-sm btn-icon" id="btn-play-step-back" title="Step Back 1 Move (← key)">⏮</button>
+            <button class="btn btn-sm btn-play" id="btn-play-toggle" title="Play / Pause Nozzle Movement (Spacebar)">
+              <span id="play-btn-icon">▶</span>
+              <span id="play-btn-text">Play</span>
+            </button>
+            <button class="btn btn-sm btn-icon" id="btn-play-step-forward" title="Step Forward 1 Move (→ key)">⏭</button>
+            <select id="play-speed-select" class="speed-select" title="Simulation Speed Multiplier">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+              <option value="5">5×</option>
+              <option value="10">10×</option>
+              <option value="20">20×</option>
+            </select>
+            <label class="checkbox-wrap auto-next-wrap" title="Automatically advance to the next layer when current layer finishes">
+              <input type="checkbox" id="chk-auto-advance-layer" checked /> Auto-next
+            </label>
+          </div>
+
+          <div class="slider-control-group move-slider-group">
+            <span class="scrubber-label move-label">NOZZLE</span>
+            <input type="range" id="move-slider" min="0" max="1000" value="1000" />
+          </div>
+
+          <div class="move-readout" id="move-readout">
+            <span class="move-badge-type" id="hud-move-type">Outer Wall</span>
+            <span class="move-stat" id="hud-move-step">Move 0 / 0</span>
+            <span class="move-stat" id="hud-move-speed">25 mm/s</span>
+            <span class="move-coord" id="hud-move-pos">X: 0.0 Y: 0.0 Z: 0.0</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal for Inspecting Generated G-Code -->
+  <div class="modal-backdrop" id="gcode-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Generated Concrete G-Code Preview</span>
+        <button class="btn btn-sm" id="btn-close-modal">Close</button>
+      </div>
+      <div class="modal-body">
+        <textarea class="gcode-textarea" id="gcode-preview-textarea" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for In-App Prompts, Alerts & Confirmations (Achromatic Theme) -->
+  <div class="modal-backdrop" id="cim-dialog-modal">
+    <div class="modal-card cim-dialog-card">
+      <div class="modal-header cim-dialog-header">
+        <span id="cim-dialog-title">Save Preset</span>
+        <button class="btn btn-sm cim-dialog-close-btn" id="cim-dialog-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body cim-dialog-body">
+        <div id="cim-dialog-message" class="cim-dialog-message">Enter preset name:</div>
+        <input type="text" id="cim-dialog-input" class="cim-dialog-input" spellcheck="false" autocomplete="off" />
+      </div>
+      <div class="modal-footer cim-dialog-footer">
+        <button class="btn" id="cim-dialog-btn-cancel">Cancel</button>
+        <button class="btn btn-dialog-confirm" id="cim-dialog-btn-confirm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="slicer-engine.js"></script>
+  <script src="viewport3d.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+{
+  "name": "cim-slicer",
+  "version": "0.4.0",
+  "description": "CIM Slicer 0.4.0 - Jihu Studio",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:portable": "electron-builder --win portable",
+    "dist:setup": "electron-builder --win nsis"
+  },
+  "author": "Jihu Studio",
+  "license": "MIT",
+  "build": {
+    "appId": "com.cim.slicer",
+    "productName": "CIM Slicer 0.4.0 - Jihu Studio",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "styles.css",
+      "app.js",
+      "slicer-engine.js",
+      "viewport3d.js",
+      "main.js",
+      "preload.js",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "portable": {
+      "artifactName": "CIM-Slicer-0.4.0-Portable.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CIM Slicer",
+      "artifactName": "CIM-Slicer-0.4.0-Setup.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.11.3",
+    "electron-builder": "^26.15.3"
+  }
+}
