@@ -16,6 +16,13 @@ An open-source desktop 3D slicer built with Electron for **concrete and ceramic 
   - Load `.stl`, `.obj`, and `.3mf` models (file picker or drag-and-drop) with interactive translation, scaling, rotation, and lay-on-bed tools
   - Layer-by-layer and move-by-move nozzle simulation playback with G-Code inspection and export
 
+## Downloads
+
+Pre-built binaries for **Windows (x64)** and **macOS (Apple Silicon & Intel)** are available on the [Releases](https://github.com/kjihu18/CIM-Slicer/releases) page:
+
+- **Windows**: `CIM-Slicer-0.4.0-Setup.exe` (Installer) / `CIM-Slicer-0.4.0-Portable.exe` (Portable)
+- **macOS**: `CIM-Slicer-0.4.0-arm64.dmg` (Apple Silicon) / `CIM-Slicer-0.4.0-x64.dmg` (Intel)
+
 ## Getting Started
 
 ### Prerequisites
@@ -27,15 +34,18 @@ npm install
 npm start
 ```
 
-### Build Windows Executables
+### Build Executables
 ```bash
-# Build unpacked directory, Portable (.exe), and Setup installer (.exe)
+# Windows: build unpacked directory, Portable (.exe), and Setup installer (.exe)
 npm run dist
 
-# Or build individual targets:
+# Or build individual Windows targets:
 npm run pack           # Unpacked app in dist/win-unpacked
 npm run dist:portable  # CIM-Slicer-0.4.0-Portable.exe
 npm run dist:setup     # CIM-Slicer-0.4.0-Setup.exe
+
+# macOS (run on macOS):
+npx electron-builder --mac dmg
 ```
 
 ## Quick Workflow
