@@ -1,6 +1,8 @@
 # Dependencies & build outputs
 node_modules/
 dist/
+*.dmg
+*.exe
 *.log
 
 # OS & editor files
