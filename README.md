@@ -26,8 +26,8 @@ An open-source desktop 3D slicer built with Electron for **concrete and ceramic 
 #### Ceramic Mode — Volume, Time & Piston Capacity Only
 ![Ceramic Mode Preview](assets/screenshots/03-ceramic-mode.png)
 
-#### Adaptive Hollow Support & Refill Pause Scheduling
-![Support and Piston Pause](assets/screenshots/04-support-and-piston-pause.png)
+#### Volumetric 3D Bead & Toolpath Preview
+![Volumetric 3D Bead and Toolpath Preview](assets/screenshots/04-support-and-piston-pause.png)
 
 ## Downloads
 
