@@ -1,6 +1,6 @@
 # CIM Slicer 0.4.0 - Jihu Studio
 
-An open-source desktop 3D slicer built with Electron for **concrete and ceramic paste additive manufacturing** (auger screw + piston feed extruders).
+An open-source desktop 3D slicer built with Electron for **concrete and ceramic paste additive manufacturing**.
 
 ## Key Features
 
