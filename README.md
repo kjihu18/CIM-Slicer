@@ -2,6 +2,8 @@
 
 An open-source desktop 3D slicer built with Electron for **concrete and ceramic paste additive manufacturing**.
 
+![CIM Slicer Main Prepare Workspace](assets/screenshots/01-main-prepare.png)
+
 ## Key Features
 
 - **Dual Material Modes (Concrete & Ceramic)**
@@ -15,6 +17,17 @@ An open-source desktop 3D slicer built with Electron for **concrete and ceramic 
 - **3D Prepare & Preview Workspaces**:
   - Load `.stl`, `.obj`, and `.3mf` models (file picker or drag-and-drop) with interactive translation, scaling, rotation, and lay-on-bed tools
   - Layer-by-layer and move-by-move nozzle simulation playback with G-Code inspection and export
+
+### Feature Previews
+
+#### Concrete Mode — Mix Recipe, Batch Breakdown & 90% Piston Auto-Pause
+![Concrete Mode Sliced Preview](assets/screenshots/02-concrete-sliced-preview.png)
+
+#### Ceramic Mode — Volume, Time & Piston Capacity Only
+![Ceramic Mode Preview](assets/screenshots/03-ceramic-mode.png)
+
+#### Adaptive Hollow Support & Refill Pause Scheduling
+![Support and Piston Pause](assets/screenshots/04-support-and-piston-pause.png)
 
 ## Downloads
 
